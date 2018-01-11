@@ -1,0 +1,203 @@
+(require 2htdp/image)
+; Daniel Jordan HW02
+; http://www.radford.edu/itec380/2017fall-ibarland/Homeworks/hw02/hw02.html
+
+#|
+License: CC-BY 4.0 -- you are free to share and adapt this file
+for any purpose, provided you include appropriate attribution.
+    https://creativecommons.org/licenses/by/4.0/ 
+    https://creativecommons.org/licenses/by/4.0/legalcode 
+Including a link to the *original* file satisifies "appropriate attribution".
+|#
+
+; Return `img`, but scaled so that it is as wide as `reference`.
+; `img` must be non-zero-width (unless `reference` is also zero-width).
+;
+(define (scale-to-width img reference)
+  ;(-> image? image?  image?)
+  (cond [(zero? (image-width reference)) empty-image]
+        [(zero? (image-width img)) (error 'scale-to-width "Can't scale a 0-width image to a non-0-width.")]
+        [else (scale (/ (image-width reference) (image-width img)) img)]))
+
+
+
+(check-expect (scale-to-width (square 20 'solid 'red) (ellipse 0 5 'solid 'blue))
+              empty-image)
+(check-expect (scale-to-width (square 20 'solid 'red) (rectangle 20 5 'solid 'blue))
+              (square 20 'solid 'red))
+(check-expect (scale-to-width . .)
+              .)
+(check-expect (scale-to-width (square 20 'solid 'red) (ellipse 2 5 'solid 'blue))
+              (square 2 'solid 'red))
+
+
+#|
+License: CC-BY 4.0 -- you are free to share and adapt this file
+for any purpose, provided you include appropriate attribution.
+    https://creativecommons.org/licenses/by/4.0/ 
+    https://creativecommons.org/licenses/by/4.0/legalcode 
+Including a link to the *original* file satisifies "appropriate attribution".
+|#
+
+; pizza-area : non-negative real -> non-negative real
+; Return the area of a pizza, in sq.in., whose diameter is `d` (in inches).
+; 
+(define (pizza-area d)
+   (* pi (/ d 2) (/ d 2)))
+
+(check-expect (pizza-area 0) 0)
+(check-within (pizza-area 2) #i3.1415926535897932384626433   0.000000001)
+(check-within (pizza-area 20) #i314.159   0.01)
+(check-within (pizza-area 2.5) 4.91  0.01)
+(check-within (pizza-area 1) (/ pi 4) 0.000000002)
+(check-within (pizza-area 50) #i1963.4954084936207 0.000000001)
+
+; topping-area : non-negative real -> non-negative real
+; Return the amount of pizza covered in topping, in sq. in., whose diameter is 'd' (in inches).
+;
+(define CRUST-WIDTH 2)
+(define (topping-area d)
+  (* pi (/ (- d CRUST-WIDTH) 2) (/ (- d CRUST-WIDTH) 2)))
+
+(check-within (topping-area 0) #i3.1415926535897932384626433 0.000000001)
+(check-within (topping-area 1) #i0.7853981633974483 0.000000001)
+(check-expect (topping-area 2) 0)
+(check-within (topping-area 40) #i1134.1149479459152 0.000000001)
+(check-within (topping-area 2.5) #i0.19634954084936207 0.000000001)
+(check-within (topping-area 50) #i1809.5573684677208 0.000000001)
+
+; crust-area : non-negative real -> non-negative real
+; Return the amount of exposed crust, in sq. in., whose diameter is 'd' (in inches).
+;
+(define (crust-area d)
+  (- (pizza-area d) (topping-area d)))
+
+(check-within (crust-area 0) #i-3.1415926535897932384626433 0.000000001)
+(check-within (crust-area 1) #i0.0 0.000000001)
+(check-within (crust-area 2) #i3.1415926535897932384626433 0.000000001)
+(check-within (crust-area 50) #i153.9380400258999 0.000000001)
+(check-within (crust-area 2.5) #i4.71238898038469 0.000000001)
+
+; has-suffix? : string string -> boolean
+; Return whether or not the first string ends with (the letters of) the second string
+;
+(define (has-suffix? str1 str2)
+  (string=? (substring str1 (-(string-length str1) (string-length str2)) (string-length str1)) str2))
+
+(check-expect (has-suffix? "Daniel" "iel") #true)
+(check-expect (has-suffix? "abc" "cba") #false)
+(check-expect (has-suffix? "Hello" "Bye") #false)
+(check-expect (has-suffix? "PLEASE" "WORK") #false)
+
+; make-doughnut-shape : non-negative, string -> image (doughnut-shape)
+; Returns an image of a doughnut-shape, whose diameter is 'd' and color is 'c'
+;
+(define (make-doughnut-shape d c)
+  (underlay/offset (circle d 'solid c)
+                   0
+                   0
+                   (circle (/ d 2) 'solid 'white)))
+
+; doughnut : non-negative real -> image (doughnut)
+; Returns an image of a doughnut, whose diameter is 'd'
+;
+(define (doughnut d)
+  (make-doughnut-shape d 'brown))
+
+(check-expect (doughnut 0) (underlay/offset (circle 0 'solid 'brown)
+                                            0
+                                            0
+                                            (circle 0 'solid 'white)))
+(check-expect (doughnut 100) (underlay/offset (circle 100 'solid 'brown)
+                                            0
+                                            0
+                                            (circle 50 'solid 'white)))
+(check-expect (doughnut 10) (underlay/offset (circle 10 'solid 'brown)
+                                             0
+                                             0
+                                             (circle 5 'solid 'white)))
+(check-expect (doughnut 1) (underlay/offset (circle 1 'solid 'brown)
+                                            0
+                                            0
+                                            (circle #i0.5 'solid 'white)))
+
+; eyes : non-negative real, string -> image (eyes)
+; Returns an image of eyes based on given diameter 'd' and color 'c'
+;
+(define (eyes d c)
+  (beside (make-doughnut-shape d c) 
+          (make-doughnut-shape d c)))
+
+(check-expect (eyes 0 'red) (beside (make-doughnut-shape 0 'red)
+                                      (make-doughnut-shape 0 'red)))
+(check-expect (eyes 100 'green) (beside (make-doughnut-shape 100 'green)
+                                      (make-doughnut-shape 100 'green)))
+(check-expect (eyes 1 'yellow) (beside (make-doughnut-shape 1 'yellow)
+                                      (make-doughnut-shape 1 'yellow)))
+
+; make-meme : string string string -> image (pretty much any meme)
+; Returns an image of a meme, given the specific bitmap/url, with the displayed phrases (phrase1, phrase2)
+;
+(define (make-meme phrase1 phrase2 meme-url)
+  (overlay/align 'center 'bottom
+                 (scale-to-width (text phrase2 12 'goldenrod)
+                                 (bitmap/url meme-url))
+                 (overlay/align 'center 'top
+                                (scale-to-width (text phrase1 12 'goldenrod)
+                                                (bitmap/url meme-url))
+                                (bitmap/url meme-url))))
+
+; super-cool-ski-instructor-meme : string -> image (super-cool-ski-instructor)
+; Returns an image of a super-cool-ski-instructor, with the given phrase
+;
+(define (super-cool-ski-instructor-meme phrase)
+  (make-meme phrase "you're gonna have a bad time." "https://imgflip.com/s/meme/Super-Cool-Ski-Instructor.jpg"))
+
+(check-expect (super-cool-ski-instructor-meme "If you spend all semester crying,")
+              (overlay/align 'center 'bottom
+                             (scale-to-width (text "you're gonna have a bad time." 12 'goldenrod)
+                                             (bitmap/url "https://imgflip.com/s/meme/Super-Cool-Ski-Instructor.jpg"))
+                             (overlay/align 'center 'top
+                                            (scale-to-width (text "If you spend all semester crying," 12 'goldenrod)
+                                                            (bitmap/url "https://imgflip.com/s/meme/Super-Cool-Ski-Instructor.jpg"))
+                                            (bitmap/url "https://imgflip.com/s/meme/Super-Cool-Ski-Instructor.jpg"))))
+
+; futurama-fry-meme : string string -> image (futurama-fry-meme)
+; Returns an image of futurama-fry-meme, with the given phrases
+;
+(define (futurama-fry-meme phrase1 phrase2)
+  (make-meme phrase1 phrase2 "https://i.imgflip.com/2/1bgw.jpg"))
+
+(check-expect (futurama-fry-meme "I can tell people are judgmental," "just by looking at them.")
+              (overlay/align 'center 'bottom
+                             (scale-to-width (text "just by looking at them." 12 'goldenrod)
+                                             (bitmap/url "https://i.imgflip.com/2/1bgw.jpg"))
+                             (overlay/align 'center 'top
+                                            (scale-to-width (text "I can tell people are judgmental," 12 'goldenrod)
+                                                            (bitmap/url "https://i.imgflip.com/2/1bgw.jpg"))
+                                            (bitmap/url "https://i.imgflip.com/2/1bgw.jpg"))))
+
+; aliens-guy-meme : string string -> image (aliens-guy-meme)
+; Returns an image of aliens-guy-meme, with the given phrases
+;
+(define (aliens-guy-meme phrase1 phrase2)
+  (make-meme phrase1 phrase2 "https://i.imgflip.com/2/26am.jpg"))
+
+(check-expect (aliens-guy-meme "I'm not saying it was aliens," "but it was aliens.")
+              (overlay/align 'center 'bottom
+                             (scale-to-width (text "but it was aliens." 12 'goldenrod)
+                                             (bitmap/url "https://i.imgflip.com/2/26am.jpg"))
+                             (overlay/align 'center 'top
+                                            (scale-to-width (text "I'm not saying it was aliens," 12 'goldenrod)
+                                                            (bitmap/url "https://i.imgflip.com/2/26am.jpg"))
+                                            (bitmap/url "https://i.imgflip.com/2/26am.jpg"))))
+
+(check-expect (aliens-guy-meme "I don't know," "therefore aliens.")
+              (overlay/align 'center 'bottom
+                             (scale-to-width (text "therefore aliens." 12 'goldenrod)
+                                             (bitmap/url "https://i.imgflip.com/2/26am.jpg"))
+                             (overlay/align 'center 'top
+                                            (scale-to-width (text "I don't know," 12 'goldenrod)
+                                                            (bitmap/url "https://i.imgflip.com/2/26am.jpg"))
+                                            (bitmap/url "https://i.imgflip.com/2/26am.jpg"))))
+
